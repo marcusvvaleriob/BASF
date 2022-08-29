@@ -1,0 +1,130 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns
+-----------------------------------------------------------------------------
+import time
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+data = pd.read_csv("D:\Documentos\Marcus\BASF/ds_salaries.csv")
+data.head()
+------------------------------------------------------------------------------
+data.info()
+------------------------------------------------------------------------------
+data.describe().T
+------------------------------------------------------------------------------
+data.drop(["Unnamed: 0"], axis=1, inplace=True)
+data.columns
+------------------------------------------------------------------------------
+data.head()
+------------------------------------------------------------------------------
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+
+
+def format_axes(fig):
+    for i, ax in enumerate(fig.axes):
+        ax.tick_params(labelbottom=True, labelleft=True)
+
+fig = plt.figure(constrained_layout=True, figsize=(22,15))
+
+gs = GridSpec(4, 3, figure=fig)
+
+ax1 = fig.add_subplot(gs[1, 2])
+ax2 = fig.add_subplot(gs[2, 2])
+ax3 = fig.add_subplot(gs[1:3, 0:2])
+
+
+sns.countplot(ax=ax1, data=data, x=data.work_year)
+
+sns.histplot(ax=ax2,x=data.salary_in_usd, 
+             bins=25, kde=True, color= "green")
+
+sns.countplot(ax=ax3, data=data, y=data.job_title).tick_params(axis='y', which='minor', pad=-750, rotation=-360)
+
+fig.suptitle("Representação Visual")
+format_axes(fig)
+
+plt.show()
+------------------------------------------------------------------------------
+def find_outliers(data):
+    global q_list
+    q_list = []
+    sorted_data = data.sort_values()
+    
+    for q, p in {"Q1": 25, "Q2": 50, "Q3": 75}.items():
+        
+        
+        Q = np.percentile(sorted_data, p, interpolation = 'midpoint')
+        q_list.append(Q)
+        
+        print("Calculando...", q)
+        time.sleep(2) 
+        print("{}: {} percentual de {} é,".format(q,p,data.name), Q)
+    
+    global Q1, Q2, Q3
+    
+    Q1 = q_list[0]
+    Q2 = q_list[1]
+    Q3 = q_list[2]
+    
+    IQR = Q3 - Q1 
+    print("O intervalo interquartil é", IQR)
+    
+    
+    global low_lim, up_lim
+    
+    low_lim = Q1 - 1.5 * IQR
+    up_lim = Q3 + 1.5 * IQR
+    
+    time.sleep(1)
+    print(" ")
+    print("Limites")
+    time.sleep(2)
+    print("limite_inferior é", low_lim)
+    print("limite_superior é", up_lim)
+    
+    
+    time.sleep(1)
+    
+    outliers =[]
+    for x in sorted_data:
+        if ((x> up_lim) or (x<low_lim)):
+             outliers.append(x)
+    
+    time.sleep(3)
+    print("Os OUtliers são:", outliers)
+
+
+find_outliers(data.salary_in_usd)
+------------------------------------------------------------------------------
+def plot_outliers(data):
+    
+    f, ax = plt.subplots(figsize=(22,5))
+    ax.ticklabel_format(style='plain', axis='both')
+    
+    outliers = sns.boxplot(ax=ax, x=data, palette="Paired")
+    plt.axvspan(xmin = low_lim, xmax = data.min(), alpha=0.3, color='red')
+    plt.axvspan(xmin = up_lim, xmax = data.max(), alpha=0.3, color='red')
+    
+plot_outliers(data.salary_in_usd)
+-------------------------------------------------------------------------------
+clean_data = data[(data.salary_in_usd < up_lim) & (data.salary_in_usd > low_lim)]
+print("Menor salário: {}".format(clean_data.salary_in_usd.min()))
+print("Maior salário: {}".format(clean_data.salary_in_usd.max()))
+-------------------------------------------------------------------------------
+clean_data.head()
+-------------------------------------------------------------------------------
+x=(data.work_year)
+y=(data.salary_in_usd)
+
+plt.scatter(x, y)
+
+z = np.polyfit(x, y, 1)
+p = np.poly1d(z)
+plt.plot(x,p(x),"r--")
